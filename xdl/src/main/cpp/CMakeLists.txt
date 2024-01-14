@@ -3,6 +3,7 @@ project(xdl)
 
 file(GLOB XDL_SRC *.c)
 add_library(xdl SHARED ${XDL_SRC})
+add_library(xdl STATIC ${SOURCES})
 target_compile_features(xdl PUBLIC c_std_17)
 target_compile_options(xdl PUBLIC -std=c17 -Weverything -Werror)
 target_include_directories(xdl PUBLIC include .)
