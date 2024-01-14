@@ -1,0 +1,43 @@
+{
+  "version": 6, // CMake 配置文件版本号
+  "cmakeMinimumRequired": {
+    "major": 3, // 指定需要的 CMake 最低版本号
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "arm", // 配置预设名称为 arm
+      "generator": "Ninja", // 使用 Ninja 生成器
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Android", // 指定系统名称为 Android
+        "CMAKE_ANDROID_ARCH": "arm", // 指定 Android 架构为 ARM
+        "CMAKE_ANDROID_ARCH_ABI": "armeabi-v7a", // 指定 Android 应用程序二进制接口为 armeabi-v7a
+        "CMAKE_ANDROID_ARM_MODE": "ON", // 开启 ARM 模式
+        "CMAKE_ANDROID_ARM_NEON": "ON", // 开启 NEON 指令优化
+        "CMAKE_CXX_COMPILER": "clang++", // 使用 Clang++ 编译器
+        "CMAKE_CXX_STANDARD": "20", // 使用 C++20 标准
+        "CMAKE_BUILD_TYPE": "Release", // 构建类型为 Release
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--as-needed -Wl,--exclude-libs,ALL -Wl,--gc-sections -Wl,--strip-all", 
+									/*
+									  设置链接器标志，排除所有库、垃圾回收和剥离符号表
+									  -Wl,--exclude-libs,ALL: 排除所有库，即不将未使用的库链接到最终的可执行文件中。
+									  -Wl,--gc-sections: 进行节（section）垃圾回收。它会从最终的可执行文件中删除未使用的节，以减小文件大小。
+									  -Wl,--strip-all: 剥离所有符号表，以进一步减小最终的可执行文件大小。
+									  -Wl,--as-needed: 只链接实际需要的库，避免链接未使用的库，减小文件大小。
+									*/
+        "CMAKE_CXX_FLAGS_RELEASE": "-Oz -flto -faddrsig -ffunction-sections -fdata-sections -fvisibility=hidden -fstack-protector"
+        /*
+          设置 C++ Release 模式标志
+          -Oz: 启用尺寸优化，尽可能减小生成的代码大小。
+          -flto: 启用链接时优化（Link-Time Optimization），对整个程序进行优化，而不仅仅是单个编译单元。
+          -faddrsig: 启用地址签名（Address-signature-based Pointer Authentication）的支持，用于提高指针的安全性。
+          -ffunction-sections: 将每个函数放入独立的节中，以便链接器可以更好地进行优化和垃圾回收。
+          -fdata-sections: 将每个全局变量和静态变量放入独立的节中，以便链接器可以更好地进行优化和垃圾回收。
+          -fvisibility=hidden: 将默认的符号可见性设置为隐藏，以减小最终的可执行文件的符号表大小。
+          -fstack-protector: 启用栈保护功能，用于检测并防止栈溢出攻击。
+        */
+      }
+    }
+  ]
+}
