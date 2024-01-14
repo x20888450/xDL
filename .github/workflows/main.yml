@@ -1,0 +1,27 @@
+name: Build
+on:
+  push:
+jobs:
+  build-project:
+    name: Build Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+      #- name: test
+        #run: chmod +x ./build.sh && ./build.sh
+      - name: Configure Project
+        uses: threeal/cmake-action@v1.3.0
+        with:
+         generator: Ninja
+         #cxx-compiler: clang++ 
+         build-dir: xdl/src/main/cpp/build
+         args: --preset=arm
+         #options: CMAKE_SYSTEM_NAME=Android CMAKE_ANDROID_ARCH=arm CMAKE_ANDROID_ARCH_ABI=armeabi-v7a CMAKE_ANDROID_ARM_MODE=ON CMAKE_ANDROID_ARM_NEON=ON 
+         run-build: true
+      - name: uplogd
+        uses: actions/upload-artifact@v4
+        with:
+         name: build
+         path: xdl/src/main/cpp/build
+         retention-days: 3
