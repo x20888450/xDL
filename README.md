@@ -2,13 +2,13 @@
 
 ![](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
 ![](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)
-![](https://img.shields.io/badge/release-2.1.0-red.svg?style=flat)
-![](https://img.shields.io/badge/Android-4.1%20--%2014-blue.svg?style=flat)
+![](https://img.shields.io/badge/release-2.2.0-red.svg?style=flat)
+![](https://img.shields.io/badge/Android-4.1%20--%2015-blue.svg?style=flat)
 ![](https://img.shields.io/badge/arch-armeabi--v7a%20%7C%20arm64--v8a%20%7C%20x86%20%7C%20x86__64-blue.svg?style=flat)
 
 xDL is an enhanced implementation of the Android DL series functions.
 
-[README 中文版](README.zh-CN.md)
+[**简体中文**](README.zh-CN.md)
 
 
 ## Features
@@ -22,7 +22,7 @@ xDL is an enhanced implementation of the Android DL series functions.
     * Including linker / linker64 (for Android <= 8.x).
     * Return full pathname instead of basename (for Android 5.x).
     * Return app\_process32 / app\_process64 instead of package name.
-* Support Android 4.1 - 14 (API level 16 - 34).
+* Support Android 4.1 - 15 (API level 16 - 35).
 * Support armeabi-v7a, arm64-v8a, x86 and x86_64.
 * MIT licensed.
 
@@ -32,11 +32,11 @@ xDL is an enhanced implementation of the Android DL series functions.
 If xDL is compiled into an independent dynamic library:
 
 | ABI         | Compressed (KB) | Uncompressed (KB) |
-| :---------- | --------------: | ----------------: |
-| armeabi-v7a | 7.5             | 13                |
-| arm64-v8a   | 8.5             | 18                |
-| x86         | 8.5             | 17                |
-| x86_64      | 8.7             | 18                |
+| :---------- |----------------:|------------------:|
+| armeabi-v7a |             7.9 |                15 |
+| arm64-v8a   |             9.1 |                20 |
+| x86         |             9.0 |                18 |
+| x86_64      |             9.1 |                20 |
 
 
 ## Usage
@@ -53,7 +53,7 @@ android {
 }
 
 dependencies {
-    implementation 'io.github.hexhacking:xdl:2.1.0'
+    implementation 'io.github.hexhacking:xdl:2.2.0'
 }
 ```
 
@@ -146,6 +146,7 @@ There is a sample app in the [xdl-sample](xdl_sample) folder you can refer to.
 #define XDL_ALWAYS_FORCE_LOAD 0x02
 
 void *xdl_open(const char *filename, int flags);
+void *xdl_open2(struct dl_phdr_info *info);
 void *xdl_close(void *handle);
 ```
 
@@ -175,6 +176,8 @@ If `xdl_open()` really uses `dlopen()` to load the library, `xdl_close()` will r
 760baa1000-760baa2000 rw-p 000c2000 fd:03 2441  /system/lib64/libc++.so
 760baa2000-760baaa000 r--p 000c3000 fd:03 2441  /system/lib64/libc++.so
 ```
+
+`xdl_open2()` creates a `handle` from `struct dl_phdr_info`. `xdl_open2()` is always `XDL_DEFAULT` semantics, i.e. it will not try to load ELF with `dlopen()`.
 
 ### 2. `xdl_sym()` and `xdl_dsym()`
 
@@ -211,7 +214,11 @@ typedef struct
     size_t            dlpi_phnum;
 } xdl_info_t;
 
+#define XDL_DEFAULT 0x00
+#define XDL_NON_SYM 0x01
+
 int xdl_addr(void *addr, xdl_info_t *info, void **cache);
+int xdl_addr4(void *addr, xdl_info_t *info, void **cache, int flags);
 void xdl_addr_clean(void **cache);
 ```
 
@@ -229,6 +236,8 @@ xdl_addr(addr_2, &info, &cache);
 xdl_addr(addr_3, &info, &cache);
 xdl_addr_clean(&cache);
 ```
+
+* `xdl_addr4()` is similar to `xdl_addr()`, except that it adds the `flags` parameter. When the `flags` value is `XDL_DEFAULT`, the behavior of `xdl_addr4()` is the same as `xdl_addr()`. When the `flags` value is `XDL_NON_SYM`, `xdl_addr4()` will not obtain symbol-related information (the values of `dli_sname`, `dli_saddr`, and `dli_ssize` in `xdl_info_t` are all `0`).
 
 ### 4. `xdl_iterate_phdr()`
 

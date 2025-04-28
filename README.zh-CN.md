@@ -2,13 +2,13 @@
 
 ![](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
 ![](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)
-![](https://img.shields.io/badge/release-2.1.0-red.svg?style=flat)
-![](https://img.shields.io/badge/Android-4.1%20--%2014-blue.svg?style=flat)
+![](https://img.shields.io/badge/release-2.2.0-red.svg?style=flat)
+![](https://img.shields.io/badge/Android-4.1%20--%2015-blue.svg?style=flat)
 ![](https://img.shields.io/badge/arch-armeabi--v7a%20%7C%20arm64--v8a%20%7C%20x86%20%7C%20x86__64-blue.svg?style=flat)
 
 xDL 是 Android DL 系列函数的增强实现。
 
-[README English Version](README.md)
+[**English**](README.md)
 
 
 ## 特征
@@ -22,7 +22,7 @@ xDL 是 Android DL 系列函数的增强实现。
     * 在 Android <= 8.x 时，包含 linker / linker64。
     * 在 Android 5.x 中，返回完整的路径名（full pathname），而不是文件名（basename）。
     * 返回 app\_process32 / app\_process64，而不是包名。
-* 支持 Android 4.1 - 14 (API level 16 - 34)。
+* 支持 Android 4.1 - 15 (API level 16 - 35)。
 * 支持 armeabi-v7a, arm64-v8a, x86 和 x86_64。
 * 使用 MIT 许可证授权。
 
@@ -32,11 +32,11 @@ xDL 是 Android DL 系列函数的增强实现。
 如果将 xDL 编译成独立的动态库：
 
 | ABI         | 压缩后 (KB) | 未压缩 (KB) |
-| :---------- | ---------: | ---------: |
-| armeabi-v7a | 7.5        | 13         |
-| arm64-v8a   | 8.5        | 18         |
-| x86         | 8.5        | 17         |
-| x86_64      | 8.7        | 18         |
+| :---------- |---------:|---------:|
+| armeabi-v7a |      7.9 |       15 |
+| arm64-v8a   |      9.1 |       20 |
+| x86         |      9.0 |       18 |
+| x86_64      |      9.1 |       20 |
 
 
 ## 使用
@@ -53,7 +53,7 @@ android {
 }
 
 dependencies {
-    implementation 'io.github.hexhacking:xdl:2.1.0'
+    implementation 'io.github.hexhacking:xdl:2.2.0'
 }
 ```
 
@@ -146,6 +146,7 @@ android {
 #define XDL_ALWAYS_FORCE_LOAD 0x02
 
 void *xdl_open(const char *filename, int flags);
+void *xdl_open2(struct dl_phdr_info *info);
 void *xdl_close(void *handle);
 ```
 
@@ -175,6 +176,8 @@ void *xdl_close(void *handle);
 760baa1000-760baa2000 rw-p 000c2000 fd:03 2441  /system/lib64/libc++.so
 760baa2000-760baaa000 r--p 000c3000 fd:03 2441  /system/lib64/libc++.so
 ```
+
+`xdl_open2()` 通过 `struct dl_phdr_info` 创建 `handle`。`xdl_open2()` 始终是 `XDL_DEFAULT` 的语意，即它不会尝试用 `dlopen()` 去加载 ELF。
 
 ### 2. `xdl_sym()` 和 `xdl_dsym()`
 
@@ -211,14 +214,18 @@ typedef struct
     size_t            dlpi_phnum;
 } xdl_info_t;
 
+#define XDL_DEFAULT 0x00
+#define XDL_NON_SYM 0x01
+
 int xdl_addr(void *addr, xdl_info_t *info, void **cache);
+int xdl_addr4(void *addr, xdl_info_t *info, void **cache, int flags);
 void xdl_addr_clean(void **cache);
 ```
 
 `xdl_addr()` 和 [`dladdr()`](https://man7.org/linux/man-pages/man3/dladdr.3.html) 类似。但有以下几点不同：
 
 * `xdl_addr()` 不仅能查询动态链接符号，还能查询调试符号。
-*  `xdl_addr()` 使用 `xdl_info_t` 结构体代替了 `Dl_info` 结构体，它包含了更多的扩展信息：`dli_ssize` 是当前符号所占用的字节数；`dlpi_phdr` 指向当前符号所在 ELF 的 program headers 数组；`dlpi_phnum` 是 `dlpi_phdr` 数组的元素个数。
+* `xdl_addr()` 使用 `xdl_info_t` 结构体代替了 `Dl_info` 结构体，它包含了更多的扩展信息：`dli_ssize` 是当前符号所占用的字节数；`dlpi_phdr` 指向当前符号所在 ELF 的 program headers 数组；`dlpi_phnum` 是 `dlpi_phdr` 数组的元素个数。
 * `xdl_addr()` 需要传递一个附加的参数（cache），其中会缓存 `xdl_addr()` 执行过程中打开的 ELF handle，缓存的目的是使后续对同一个 ELF 的 `xdl_addr()` 执行的更快。当不需要再执行 `xdl_addr()` 时，请使用 `xdl_addr_clean()` 清除缓存。举例：
 
 ```C
@@ -229,6 +236,8 @@ xdl_addr(addr_2, &info, &cache);
 xdl_addr(addr_3, &info, &cache);
 xdl_addr_clean(&cache);
 ```
+
+* `xdl_addr4()` 和 `xdl_addr()` 类似，区别是增加了 `flags` 参数。`flags` 值为 `XDL_DEFAULT` 时，`xdl_addr4()` 的行为与 `xdl_addr()` 相同。`flags` 值为 `XDL_NON_SYM` 时，`xdl_addr4()` 不会去获取符号相关的信息（`xdl_info_t` 中 `dli_sname`、`dli_saddr` 和 `dli_ssize` 的值均为 `0`）。
 
 ### 4. `xdl_iterate_phdr()`
 

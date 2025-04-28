@@ -4,8 +4,8 @@ plugins {
 
 android {
     namespace 'io.github.hexhacking.xdl.sample'
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+    buildToolsVersion = rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
     defaultConfig {
         applicationId "io.github.hexhacking.xdl.sample"
@@ -19,6 +19,9 @@ android {
         externalNativeBuild {
             cmake {
                 abiFilters rootProject.ext.abiFilters.split(",")
+                if(rootProject.ext.dependencyOnLocalLibrary) {
+                    arguments "-DDEPENDENCY_ON_LOCAL_LIBRARY=ON"
+                }
             }
         }
     }
